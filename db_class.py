@@ -1,11 +1,12 @@
 import sqlite3
+import threading
 
 
 class SimpleDB:
     def __init__(self, table_name="generic", **kwargs):
         self.table_name = table_name
         self.db_location = table_name + ".db"
-        self.con_stack = []
+        self.hash_table = {}
         # here begins our initialization statements
         self.begin_connection()
         self.drop_table()
@@ -37,10 +38,10 @@ class SimpleDB:
     def execute(self, command, *args):
         ret_value = []
         try:
-            cursor = self.con_stack[-1].cursor()
+            cursor = self.hash_table.get(self.get_cur_thread()).cursor()
             cursor.execute(command, args)
             if "INSERT" or "UPDATE" in command.upper():
-                self.con_stack[-1].commit()
+                self.hash_table.get(self.get_cur_thread()).commit()
             ret_value = cursor.fetchall()
         except IndexError as ind_error:
             print(f'''{ind_error}
@@ -76,9 +77,13 @@ class SimpleDB:
         print("| {:-^10} + {:-^50} |".format("", ""))
 
     def begin_connection(self):
-        self.con_stack.append(sqlite3.connect(self.db_location))
-        return self.con_stack[-1]
+        key = self.get_cur_thread()
+        return self.hash_table.setdefault(key,
+                                          sqlite3.connect(self.db_location))
 
     def end_connection(self):
-        con = self.con_stack.pop()
-        con.close()
+        key = self.get_cur_thread()
+        self.hash_table.pop(key).close()
+
+    def get_cur_thread(self):
+        return threading.get_ident()
