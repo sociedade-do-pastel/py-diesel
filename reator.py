@@ -51,7 +51,9 @@ def check_reactor():
         temp_vol_oleo = database.get("volume_oleo")
         temp_vol_insumo = database.get("volume_insumo")
 
-        if temp_vol_etoh >= MIN_ETOH and temp_vol_naoh >= MIN_NAOH and temp_vol_oleo >= MIN_OLEO:
+        if temp_vol_etoh >= MIN_ETOH \
+           and temp_vol_naoh >= MIN_NAOH \
+           and temp_vol_oleo >= MIN_OLEO:
             temp_vol_etoh -= MIN_ETOH
             temp_vol_naoh -= MIN_NAOH
             temp_vol_oleo -= MIN_OLEO
@@ -101,7 +103,8 @@ def inserir_naoh_etoh_reator(recv_naoh_etoh: Input_naoh_etoh,
     global database
     try:
         database.begin_connection()
-        if recv_naoh_etoh.qtde_etoh is not None and recv_naoh_etoh.qtde_naoh is not None:
+        if recv_naoh_etoh.qtde_etoh is not None \
+           and recv_naoh_etoh.qtde_naoh is not None:
             if recv_naoh_etoh.qtde_etoh >= 0:
                 database.increment("volume_etoh", recv_naoh_etoh.qtde_etoh)
             if recv_naoh_etoh.qtde_naoh >= 0:
