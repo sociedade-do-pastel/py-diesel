@@ -18,7 +18,7 @@ def regra_negocio(**kwargs):
 
 @app.post("/")
 def entrada_volume(volume: Secador ):
-    volume = volume.quantidade
+    volume = volume.quantidade * 0.975
     tempo = 5*volume
     t = Timer(tempo, regra_negocio, kwargs={"volume":volume})
     t.start()
