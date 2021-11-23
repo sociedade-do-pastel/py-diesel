@@ -14,6 +14,12 @@ porta = int(sys.argv[1])
 tabela = db_class.SimpleDB("tabela_tanque_lavagem_3",
                            volume_tanque_lavagem_3=0.0)
 
+orquestrador = db_class.get_db("orquestrador.db")
+
+orquestrador.begin_connection()
+orquestrador.insert("lv3_volume", 0.0)
+orquestrador.end_connection()
+
 
 class Tanque(BaseModel):
     """BaseModel provê formato para json."""
@@ -23,15 +29,18 @@ class Tanque(BaseModel):
 
 app = FastAPI()
 
+
 @app.post("/tanque_lavagem_3/", status_code=200)
 def inserir_volume_tanque_lavagem_3(tanque: Tanque, response: Response):
     """Insere uma quantidade no tanque."""
-    global tabela
+    global tabela, orquestrador
     tabela.begin_connection()
-
+    orquestrador.begin_connection()
     if tanque.qtde_biodiesel > 0:
         tabela.increment("volume_tanque_lavagem_3",
                          tanque.qtde_biodiesel*0.905)
+        orquestrador.increment("lv3_volume",
+                               tanque.qtde_biodiesel*0.905)
         resposta = {"volume_tanque_lavagem_3":
                     tabela.get("volume_tanque_lavagem_3")}
     else:
@@ -39,13 +48,14 @@ def inserir_volume_tanque_lavagem_3(tanque: Tanque, response: Response):
         resposta = {}
 
     tabela.end_connection()
+    orquestrador.end_connection()
     return resposta
 
 
 def enviar_para_secador_2():
     """Enviar 1.5 L/s para secador_2."""
     global stop_thread
-    global tabela
+    global tabela, orquestrador
 
     while True:
         sleep(1)
@@ -65,7 +75,10 @@ def enviar_para_secador_2():
             enviar = 0
 
         tabela.update("volume_tanque_lavagem_3", volume_tanque_lavagem_3)
+        orquestrador.begin_connection()
+        orquestrador.update("lv3_volume", volume_tanque_lavagem_3)
         tabela.end_connection()
+        orquestrador.end_connection()
 
         if enviar != 0:
             requests.post(f"http://127.0.0.1:{porta+1}/secador_2",

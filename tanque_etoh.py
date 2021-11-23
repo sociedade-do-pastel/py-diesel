@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 port = int(sys.argv[1])
 
+
 class Tanque(BaseModel):
     """BaseModel provê formato para json."""
 
@@ -16,11 +17,13 @@ class Tanque(BaseModel):
 
 app = FastAPI()
 
+
 @app.post("/tanque_etoh/", status_code=200)
 def inserir_volume_tanque_etoh(tanque: Tanque, response: Response):
     """Insere uma quantidade no tanque."""
     if tanque.qtde_biodiesel > 0:
-        requests.post(f"http://127.0.0.1:{port+1}/tanque_naoh_etoh", json={"qtde_etoh": tanque.qtde_biodiesel})
+        requests.post(f"http://127.0.0.1:{port+1}/tanque_naoh_etoh",
+                      json={"qtde_etoh": tanque.qtde_biodiesel})
         return {"volume_tanque_etoh": tanque.qtde_biodiesel}
     response.status_code = 400
     return {}

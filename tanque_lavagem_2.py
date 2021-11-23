@@ -13,6 +13,11 @@ porta = int(sys.argv[1])
 
 tabela = db_class.SimpleDB("tabela_tanque_lavagem_2",
                            volume_tanque_lavagem_2=0.0)
+orquestrador = db_class.get_db("orquestrador.db")
+
+orquestrador.begin_connection()
+orquestrador.insert("lv2_volume", 0.0)
+orquestrador.end_connection()
 
 
 class Tanque(BaseModel):
@@ -23,14 +28,19 @@ class Tanque(BaseModel):
 
 app = FastAPI()
 
+
 @app.post("/tanque_lavagem_2/", status_code=200)
 def inserir_volume_tanque_lavagem_2(tanque: Tanque, response: Response):
     """Insere uma quantidade no tanque."""
-    global tabela
+    global tabela, orquestrador
+
     tabela.begin_connection()
+    orquestrador.begin_connection()
 
     if tanque.qtde_biodiesel > 0:
         tabela.increment("volume_tanque_lavagem_2",
+                         tanque.qtde_biodiesel*0.905)
+        tabela.increment("lv2_volume",
                          tanque.qtde_biodiesel*0.905)
         resposta = {"volume_tanque_lavagem_2":
                     tabela.get("volume_tanque_lavagem_2")}
@@ -39,6 +49,7 @@ def inserir_volume_tanque_lavagem_2(tanque: Tanque, response: Response):
         resposta = {}
 
     tabela.end_connection()
+    orquestrador.end_connection()
     return resposta
 
 
@@ -63,9 +74,11 @@ def enviar_para_tanque_lavagem_3():
             volume_tanque_lavagem_2 = 0
         else:
             enviar = 0
-
+        orquestrador.begin_connection()
         tabela.update("volume_tanque_lavagem_2", volume_tanque_lavagem_2)
+        tabela.update("lv2_volume", volume_tanque_lavagem_2)
         tabela.end_connection()
+        orquestrador.end_connection()
 
         if enviar != 0:
             requests.post(f"http://127.0.0.1:{porta+1}/tanque_lavagem_3",

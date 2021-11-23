@@ -13,6 +13,11 @@ port = int(sys.argv[1])
 
 tabela = db_class.SimpleDB("tabela_decantador",
                            volume_decantador=0.0)
+orquestrador = db_class.get_db("orquestrador.db")
+
+orquestrador.begin_connection()
+orquestrador.insert("dc_volume", 0.0)
+orquestrador.end_connection()
 
 
 class Tanque(BaseModel):
@@ -44,7 +49,7 @@ def inserir_volume_tanque_lavagem_1(tanque: Tanque, response: Response):
     tabela.begin_connection()
 
     if (tanque.qtde_biodiesel > 0
-       and tanque.qtde_biodiesel + tabela.get("volume_decantador") <= 10):
+            and tanque.qtde_biodiesel + tabela.get("volume_decantador") <= 10):
         tabela.increment("volume_decantador", tanque.qtde_biodiesel)
         resposta = {"volume_decantador": tabela.get("volume_decantador")}
     else:
@@ -66,6 +71,7 @@ def enviar_para_tanque_glicerina():
     """
     global stop_thread
     global tabela
+    global decantador
 
     stop_time = 0
 
@@ -89,7 +95,11 @@ def enviar_para_tanque_glicerina():
             result = volume_decantador
             tabela.increment("volume_decantador", -result)
 
+        temp = tabela.get("volume_decantador")
         tabela.end_connection()
+        orquestrador.begin_connection()
+        orquestrador.update("dc_volume", temp)
+        orquestrador.end_connection()
 
         stop_time = result/3 * 5
 
