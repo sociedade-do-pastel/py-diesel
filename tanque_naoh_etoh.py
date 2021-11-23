@@ -54,12 +54,20 @@ def envia_volumes():
         if volume_etoh > 1:
             enviar_etoh = 1
 
-        response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={
-                                 "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh})
-        while response.status_code != 200:
-            time.sleep(1)
+        response = requests.Response()
+        try:
             response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={
-                                     "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh})
+                "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh})
+        except Exception:
+            pass
+
+        while response.status_code != 200:
+            try:
+                time.sleep(1)
+                response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={
+                    "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh})
+            except Exception:
+                continue
 
         # begin connection
         orquestrador.begin_connection()

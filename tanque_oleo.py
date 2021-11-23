@@ -44,12 +44,21 @@ def regra_negocio():
         tabela.update("quantidade", quantidade)
         orquestrador.update("to_qtde_oleo", quantidade)
         payload = {"qtde_oleo": disponivel}
-        response = requests.post(
-            f"http://127.0.0.1:{port+1}/reator/oleo", json=payload)
-        while response.status_code != 200:
-            time.sleep(1)
+        response = requests.Response()
+        try:
             response = requests.post(
-                f'http://127.0.0.1:{port+1}/reator/oleo', json=payload)
+                f"http://127.0.0.1:{port+1}/reator/oleo", json=payload)
+        except Exception:
+            pass
+
+        while response.status_code != 200:
+            try:
+                time.sleep(1)
+                response = requests.post(
+                    f'http://127.0.0.1:{port+1}/reator/oleo', json=payload)
+            except Exception:
+                pass
+
     orquestrador.end_connection()
     tabela.end_connection()
     time.sleep(1)
