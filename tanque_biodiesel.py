@@ -21,7 +21,6 @@ def inserir_volume_tanque_biodiesel(tanque: Tanque, response: Response):
 	global volume_tanque_biodiesel
 	if tanque.qtde_biodiesel > 0:
 		volume_tanque_biodiesel += tanque.qtde_biodiesel
-		print(f'RECV POST {tanque}')
 		return { 'volume_tanque_biodiesel': volume_tanque_biodiesel }
 	response.status_code = 400
 	return {}
@@ -29,4 +28,4 @@ def inserir_volume_tanque_biodiesel(tanque: Tanque, response: Response):
 
 
 if __name__ == '__main__':
-	uvicorn.run("tanque_biodiesel:app", host="127.0.0.1", port=int(sys.argv[1]), log_level="info", reload=True)
+	uvicorn.run("tanque_biodiesel:app", host="127.0.0.1", port=int(sys.argv[1]), log_level="critical", reload=True)

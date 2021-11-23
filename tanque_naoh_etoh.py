@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from threading import Timer
 from db_class import SimpleDB
 
+port = int(sys.argv[1])
+
 tabela = SimpleDB("tanque_naoh_etoh", volume_etoh=0.0, volume_naoh=0.0)
 
 def adiciona_volumes():
@@ -32,10 +34,10 @@ def envia_volumes():
 		if volume_etoh > 1:
 			enviar_etoh = 1
 
-		response = requests.post(f'http://127.0.0.1:{int(sys.argv[1]) - 9}/reator', json={ "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh })
+		response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={ "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh })
 		while response.status_code != 200:
 			time.sleep(1)
-			response = requests.post(f'http://127.0.0.1:{int(sys.argv[1]) - 9}/reator', json={ "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh })
+			response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={ "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh })
 
 		tabela.begin_connection()
 		tabela.increment("volume_naoh", -enviar_naoh)
@@ -69,4 +71,4 @@ if __name__ == '__main__':
 	t.start()
 	t1 = Timer(1, envia_volumes)
 	t1.start()
-	uvicorn.run("tanque_naoh_etoh:app", host="127.0.0.1", port=int(sys.argv[1]), log_level="info", reload=True)
+	uvicorn.run("tanque_naoh_etoh:app", host="127.0.0.1", port=port, log_level="info", reload=True)

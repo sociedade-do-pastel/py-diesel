@@ -77,7 +77,7 @@ def check_reactor():
 
 def enviar_decantador(valor):
     sv_response = requests.post(f"http://127.0.0.1:{DECANTER_PORT}/decantador",
-                                json={"volume_insumo": valor})
+                                json={"qtde_biodiesel": valor})
 
     return (sv_response.status_code == 200)
 

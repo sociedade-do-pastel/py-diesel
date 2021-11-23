@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from threading import Timer
 from time import sleep
 
+port = int(sys.argv[1])
+
 tabela = db_class.SimpleDB("tabela_decantador",
                            volume_decantador=0.0)
 
@@ -44,7 +46,6 @@ def inserir_volume_tanque_lavagem_1(tanque: Tanque, response: Response):
     if (tanque.qtde_biodiesel > 0
        and tanque.qtde_biodiesel + tabela.get("volume_decantador") <= 10):
         tabela.increment("volume_decantador", tanque.qtde_biodiesel)
-        print(f"RECV POST {tanque}")
         resposta = {"volume_decantador": tabela.get("volume_decantador")}
     else:
         response.status_code = 400
@@ -88,28 +89,27 @@ def enviar_para_tanque_glicerina():
             result = volume_decantador
             tabela.increment("volume_decantador", -result)
 
-        tabela.print_table()
         tabela.end_connection()
 
         stop_time = result/3 * 5
 
-        # requests.post(f"http://127.0.0.1:{int(sys.argv[1])+1}/tanque_glicerina",
-        #               json={"qtde_biodiesel": result*0.03})
-        # requests.post(f"http://127.0.0.1:{int(sys.argv[1])+2}/secador_1",
-        #               json={"qtde_biodiesel": result*0.09})
-        # requests.post(f"http://127.0.0.1:{int(sys.argv[1])+4}/tanque_lavagem_1",
-        #               json={"qtde_biodiesel": result*0.88})
+        if result > 0:
+            requests.post(f"http://127.0.0.1:{port+1}/tanque_glicerina",
+                          json={"qtde_glicerina": result*0.03})
+            requests.post(f"http://127.0.0.1:{port+2}/secador_1",
+                          json={"quantidade": result*0.09})
+            requests.post(f"http://127.0.0.1:{port+5}/tanque_lavagem_1",
+                          json={"qtde_biodiesel": result*0.88})
 
 
 if __name__ == "__main__":
-    global porta
     global stop_thread
 
     t = Timer(0, enviar_para_tanque_glicerina)
     t.start()
     stop_thread = False
 
-    uvicorn.run("decantador:app", host="127.0.0.1", port=int(sys.argv[1]),
+    uvicorn.run("decantador:app", host="127.0.0.1", port=port,
                 log_level="info", reload=True)
 
     stop_thread = True
