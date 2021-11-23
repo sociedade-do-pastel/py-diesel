@@ -69,12 +69,12 @@ class SimpleDB:
 
     def print_table(self):
         data = self.execute(f'''SELECT * FROM {self.table_name};''')
-        print("| {:-^10} + {:-^50} |".format("", ""))
-        print("| {:<10} | {:<50} |".format("produto", "valor"))
-        print("| {:-^10} + {:-^50} |".format("", ""))
+        print("| {:-^30} + {:-^45} |".format("", ""))
+        print("| {:<30} | {:<45} |".format("produto", "valor"))
+        print("| {:-^30} + {:-^45} |".format("", ""))
         for lines in data:
-            print("| {:<10} | {:<50} |".format(lines[0], lines[1]))
-        print("| {:-^10} + {:-^50} |".format("", ""))
+            print("| {:<30} | {:<45} |".format(lines[0], lines[1]))
+        print("| {:-^30} + {:-^45} |".format("", ""))
 
     def begin_connection(self):
         key = self.get_cur_thread()
@@ -87,3 +87,12 @@ class SimpleDB:
 
     def get_cur_thread(self):
         return threading.get_ident()
+
+
+def get_db(db_location="generic.db"):
+    table_name = db_location.split(".")[0]
+    dummy_db = SimpleDB("__dummy")
+    dummy_db.table_name = table_name
+    dummy_db.db_location = db_location
+
+    return dummy_db
