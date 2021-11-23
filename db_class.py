@@ -3,14 +3,15 @@ import threading
 
 
 class SimpleDB:
-    def __init__(self, table_name="generic", **kwargs):
+    def __init__(self, table_name="generic", new=True, **kwargs):
         self.table_name = table_name
         self.db_location = table_name + ".db"
         self.hash_table = {}
         # here begins our initialization statements
         self.begin_connection()
-        self.drop_table()
-        self.create_table()
+        if new:
+            self.drop_table()
+            self.create_table()
 
         if kwargs:
             for value1, value2 in kwargs.items():
@@ -91,8 +92,6 @@ class SimpleDB:
 
 def get_db(db_location="generic.db"):
     table_name = db_location.split(".")[0]
-    dummy_db = SimpleDB("__dummy")
-    dummy_db.table_name = table_name
-    dummy_db.db_location = db_location
+    dummy_db = SimpleDB(table_name, False)
 
     return dummy_db
