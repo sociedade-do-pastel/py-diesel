@@ -97,6 +97,7 @@ def enviar_para_tanque_glicerina():
 
         temp = tabela.get("volume_decantador")
         tabela.end_connection()
+
         orquestrador.begin_connection()
         orquestrador.update("dc_volume", temp)
         orquestrador.end_connection()

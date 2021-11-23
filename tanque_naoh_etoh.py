@@ -28,13 +28,15 @@ def adiciona_volumes():
 
     tabela.increment("volume_naoh", 0.25)
     tabela.increment("volume_etoh", 0.125)
-    orquestrador.increment("tne_qtde_naoh", 0.25)
-    orquestrador.increment("tne_qtde_etoh", 0.125)
+    etoh = tabela.get("volume_etoh")
+    naoh = tabela.get("volume_naoh")
+    # table's end_connection
+    tabela.end_connection()
+    orquestrador.update("tne_qtde_naoh", naoh)
+    orquestrador.update("tne_qtde_etoh", etoh)
 
     # end connection
     orquestrador.end_connection()
-    tabela.end_connection()
-    # end connection
     t = Timer(1, adiciona_volumes)
     t.start()
 
@@ -75,10 +77,14 @@ def envia_volumes():
         # begin connection
         tabela.increment("volume_naoh", -enviar_naoh)
         tabela.increment("volume_etoh", -enviar_etoh)
-        orquestrador.increment("tne_qtde_naoh", -enviar_naoh)
-        orquestrador.increment("tne_qtde_etoh", -enviar_etoh)
+        naoh = tabela.get("volume_naoh")
+        etoh = tabela.get("volume_etoh")
         # end connection
         tabela.end_connection()
+
+        orquestrador.update("tne_qtde_naoh", naoh)
+        orquestrador.update("tne_qtde_etoh", etoh)
+
         orquestrador.end_connection()
         # end connection
 
@@ -102,10 +108,11 @@ def inserir_volume_tanque_naoh_etoh(tanque: Tanque, response: Response):
         orquestrador.begin_connection()
         # begin connection
         tabela.increment("volume_etoh", tanque.qtde_etoh)
-        orquestrador.increment("tne_qtde_etoh", tanque.qtde_etoh)
         volume_etoh = tabela.get("volume_etoh")
         # end connection
         tabela.end_connection()
+        orquestrador.update("tne_qtde_etoh", volume_etoh)
+        # end connection
         orquestrador.end_connection()
         # end connection
         return {'volume_etoh': volume_etoh}

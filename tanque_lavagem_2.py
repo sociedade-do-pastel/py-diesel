@@ -40,10 +40,13 @@ def inserir_volume_tanque_lavagem_2(tanque: Tanque, response: Response):
     if tanque.qtde_biodiesel > 0:
         tabela.increment("volume_tanque_lavagem_2",
                          tanque.qtde_biodiesel*0.905)
-        tabela.increment("lv2_volume",
-                         tanque.qtde_biodiesel*0.905)
+
+        lv2_volume = tabela.get("volume_tanque_lavagem_2")
+        orquestrador.update("lv2_volume",
+                            lv2_volume)
+
         resposta = {"volume_tanque_lavagem_2":
-                    tabela.get("volume_tanque_lavagem_2")}
+                    lv2_volume}
     else:
         response.status_code = 400
         resposta = {}
@@ -74,10 +77,12 @@ def enviar_para_tanque_lavagem_3():
             volume_tanque_lavagem_2 = 0
         else:
             enviar = 0
-        orquestrador.begin_connection()
+
         tabela.update("volume_tanque_lavagem_2", volume_tanque_lavagem_2)
-        tabela.update("lv2_volume", volume_tanque_lavagem_2)
         tabela.end_connection()
+
+        orquestrador.begin_connection()
+        orquestrador.update("lv2_volume", volume_tanque_lavagem_2)
         orquestrador.end_connection()
 
         if enviar != 0:

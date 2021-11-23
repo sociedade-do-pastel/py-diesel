@@ -73,8 +73,8 @@ def insere_oleo_residual(Tanque: Tanque):
     orquestrador.begin_connection()
     tabela.begin_connection()
     tabela.increment("quantidade", Tanque.quantidade)
-    orquestrador.increment("to_qtde_oleo", Tanque.quantidade)
     oleo_novo = tabela.get("quantidade")
+    orquestrador.update("to_qtde_oleo", oleo_novo)
     tabela.end_connection()
     orquestrador.end_connection()
     return {"oleo_atual": oleo_novo}

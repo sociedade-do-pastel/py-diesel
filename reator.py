@@ -51,12 +51,14 @@ except IndexError:
 
 DECANTER_PORT = REACTOR_PORT + 1
 
+ciclos = 0
+
 
 def check_reactor():
-    global database, orquestrador
+    global database, orquestrador, ciclos
 
-    database.begin_connection()
     while True:
+        database.begin_connection()
         orquestrador.begin_connection()
         temp_vol_etoh = database.get("volume_etoh")
         temp_vol_naoh = database.get("volume_naoh")
@@ -87,12 +89,13 @@ def check_reactor():
                 orquestrador.update("rt_volume_etoh", temp_vol_etoh)
                 orquestrador.update("rt_volume_naoh", temp_vol_naoh)
                 orquestrador.update("rt_volume_oleo", temp_vol_oleo)
+            ciclos += 1
 
-            orquestrador.increment("rt_ciclos", 1)
+            orquestrador.update("rt_ciclos", ciclos)
             orquestrador.end_connection()
+            database.end_connection()
 
         time.sleep(INTERVAL_BETWEEN_CHECKS)
-    database.end_connection()
 
 
 def enviar_decantador(valor):
@@ -110,8 +113,11 @@ def inserir_oleo_reator(recv_oleo: Input_oleo, response: Response):
         orquestrador.begin_connection()
         if recv_oleo.qtde_oleo is not None and recv_oleo.qtde_oleo >= 0:
             database.increment("volume_oleo", recv_oleo.qtde_oleo)
-            orquestrador.increment("rt_volume_oleo", recv_oleo.qtde_oleo)
-            return {'volume_oleo': database.get('volume_oleo')}
+
+            volume_oleo = database.get('volume_oleo')
+            orquestrador.update("rt_volume_oleo", volume_oleo)
+
+            return {'volume_oleo': volume_oleo}
     finally:
         database.end_connection()
         orquestrador.end_connection()
@@ -131,14 +137,18 @@ def inserir_naoh_etoh_reator(recv_naoh_etoh: Input_naoh_etoh,
            and recv_naoh_etoh.qtde_naoh is not None:
             if recv_naoh_etoh.qtde_etoh >= 0:
                 database.increment("volume_etoh", recv_naoh_etoh.qtde_etoh)
-                orquestrador.increment("rt_volume_etoh",
-                                       recv_naoh_etoh.qtde_etoh)
+
             if recv_naoh_etoh.qtde_naoh >= 0:
                 database.increment("volume_naoh", recv_naoh_etoh.qtde_naoh)
-                orquestrador.increment("rt_volume_naoh",
-                                       recv_naoh_etoh.qtde_naoh)
-            return {'volume_etoh': database.get('volume_etoh'),
-                    'volume_naoh': database.get('volume_naoh')}
+
+            volume_etoh = database.get('volume_etoh')
+            volume_naoh = database.get('volume_naoh')
+
+            orquestrador.update("rt_volume_naoh", volume_naoh)
+            orquestrador.update("rt_volume_etoh", volume_etoh)
+
+            return {'volume_etoh': volume_etoh,
+                    'volume_naoh': volume_naoh}
     finally:
         database.end_connection()
         orquestrador.end_connection()
