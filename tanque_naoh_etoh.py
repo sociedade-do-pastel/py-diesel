@@ -126,4 +126,4 @@ if __name__ == '__main__':
     t1 = Timer(1, envia_volumes)
     t1.start()
     uvicorn.run("tanque_naoh_etoh:app", host="127.0.0.1",
-                port=port, log_level="info", reload=True)
+                port=port, log_level="critical", reload=True)

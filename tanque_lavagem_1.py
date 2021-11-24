@@ -96,6 +96,6 @@ if __name__ == "__main__":
     stop_thread = False
 
     uvicorn.run("tanque_lavagem_1:app", host="127.0.0.1", port=porta,
-                log_level="info", reload=True)
+                log_level="critical", reload=True)
 
     stop_thread = True

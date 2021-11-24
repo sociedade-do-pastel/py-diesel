@@ -29,33 +29,27 @@ class Tanque(BaseModel):
 app = FastAPI()
 
 
-@app.get("/decantador/", status_code=200)
-def obter_volume_tanque_lavagem_1():
-    """Obtém o volume atual armazenado no tanque."""
-    global tabela
-    tabela.begin_connection()
-    volume_decantador = tabela.get("volume_decantador")
-    tabela.end_connection()
-    return {"volume_decantador": volume_decantador}
-
-
 @app.post("/decantador/", status_code=200)
-def inserir_volume_tanque_lavagem_1(tanque: Tanque, response: Response):
+def inserir_volume_decantador(tanque: Tanque, response: Response):
     """Insere uma quantidade no tanque.
 
     - Armazena no máximo 10L
     """
-    global tabela
+    global tabela, orquestrador
     tabela.begin_connection()
+    orquestrador.begin_connection()
 
     if (tanque.qtde_biodiesel > 0
-            and tanque.qtde_biodiesel + tabela.get("volume_decantador") <= 10):
-        tabela.increment("volume_decantador", tanque.qtde_biodiesel)
-        resposta = {"volume_decantador": tabela.get("volume_decantador")}
+            and tanque.qtde_biodiesel + (volume_atual := tabela.get("volume_decantador")) <= 10):
+
+        tabela.update("volume_decantador", volume_atual + tanque.qtde_biodiesel)
+        orquestrador.update("dc_volume", volume_atual + tanque.qtde_biodiesel)
+        resposta = {"volume_decantador": volume_atual + tanque.qtde_biodiesel}
     else:
         response.status_code = 400
         resposta = {}
 
+    orquestrador.end_connection()
     tabela.end_connection()
     return resposta
 
@@ -85,24 +79,26 @@ def enviar_para_tanque_glicerina():
         if stop_thread is True:
             break
 
+        orquestrador.begin_connection()
         tabela.begin_connection()
+
         volume_decantador = tabela.get("volume_decantador")
 
-        if volume_decantador >= 6:
-            result = 6
-            tabela.increment("volume_decantador", -6)
+        if volume_decantador >= 3:
+            result = 3
+            tabela.update("volume_decantador", volume_decantador - 3)
+            orquestrador.update("dc_volume", volume_decantador - 3)
         else:
             result = volume_decantador
-            tabela.increment("volume_decantador", -result)
+            tabela.update("volume_decantador", volume_decantador - volume_decantador)
+            orquestrador.update("dc_volume", volume_decantador - volume_decantador)
 
-        temp = tabela.get("volume_decantador")
+        # TO-DO: chamar print da tabela do orquestrador
+
         tabela.end_connection()
-
-        orquestrador.begin_connection()
-        orquestrador.update("dc_volume", temp)
         orquestrador.end_connection()
 
-        stop_time = result/3 * 5
+        stop_time = 0 if result == 0 else 5
 
         if result > 0:
             requests.post(f"http://127.0.0.1:{port+1}/tanque_glicerina",
@@ -121,6 +117,6 @@ if __name__ == "__main__":
     stop_thread = False
 
     uvicorn.run("decantador:app", host="127.0.0.1", port=port,
-                log_level="info", reload=True)
+                log_level="critical", reload=True)
 
     stop_thread = True

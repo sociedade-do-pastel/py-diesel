@@ -31,19 +31,23 @@ def regra_negocio(**kwargs):
         time.sleep(1)
         response = requests.post(
             f'http://127.0.0.1:{port+1}/tanque_biodiesel', json=payload)
-
+    orquestrador.begin_connection()
+    volume_atual = orquestrador.get("sc2_volume")
+    orquestrador.update("sc2_volume", volume_atual - disponivel)
+    orquestrador.end_connection()
 
 @app.post("/secador_2")
 def entrada_volume(volume: Secador):
     global orquestrador
     volume = volume.quantidade * 0.975
     tempo = 5*volume
-    t = Timer(tempo, regra_negocio, kwargs={"volume": volume})
+    t = Timer(round(tempo, 2), regra_negocio, kwargs={"volume": volume})
     t.start()
     orquestrador.begin_connection()
-    orquestrador.update("sc2_volume", volume)
+    volume_atual = orquestrador.get("sc2_volume")
+    orquestrador.update("sc2_volume", volume + volume_atual)
     orquestrador.end_connection()
-    return {"Volume adicionado": volume}
+    return {"Volume adicionado": volume+volume_atual}
 
 
 if __name__ == "__main__":

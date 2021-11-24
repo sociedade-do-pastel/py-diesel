@@ -84,4 +84,4 @@ if __name__ == "__main__":
     t = Timer(0, regra_negocio)
     t.start()
     uvicorn.run("tanque_oleo:app", host="127.0.0.1",
-                port=port, log_level="info", reload=True)
+                port=port, log_level="critical", reload=True)

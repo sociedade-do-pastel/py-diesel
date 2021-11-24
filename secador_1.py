@@ -31,7 +31,10 @@ def regra_negocio(**kwargs):
         time.sleep(1)
         response = requests.post(
             f'http://127.0.0.1:{port+1}/tanque_etoh', json=payload)
-
+    orquestrador.begin_connection()
+    volume_atual = orquestrador.get("sc1_volume")
+    orquestrador.update("sc1_volume", volume_atual - disponivel)
+    orquestrador.end_connection()
 
 @app.post("/secador_1")
 def entrada_volume(volume: Secador):
@@ -41,11 +44,12 @@ def entrada_volume(volume: Secador):
     t = Timer(round(tempo, 2), regra_negocio, kwargs={"volume": volume})
     t.start()
     orquestrador.begin_connection()
-    orquestrador.update("sc1_volume", volume)
-    orquestrador.end_connection()
-    return {"Volume adicionado": volume}
+    volume_atual = orquestrador.get("sc1_volume")
+    orquestrador.update("sc1_volume", volume + volume_atual)
+    orquestrador.end_connection()    
+    return {"Volume adicionado": volume + volume_atual}
 
 
 if __name__ == "__main__":
     uvicorn.run("secador_1:app", host="127.0.0.1",
-                port=port, log_level="info", reload=True)
+                port=port, log_level="critical", reload=True)

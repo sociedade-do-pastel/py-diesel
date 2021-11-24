@@ -31,4 +31,4 @@ def inserir_volume_tanque_etoh(tanque: Tanque, response: Response):
 
 if __name__ == "__main__":
     uvicorn.run("tanque_etoh:app", host="127.0.0.1", port=port,
-                log_level="info", reload=True)
+                log_level="critical", reload=True)

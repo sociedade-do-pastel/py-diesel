@@ -175,4 +175,4 @@ if __name__ == '__main__':
     check_thread = threading.Thread(target=check_reactor, daemon=True)
     check_thread.start()
     uvicorn.run("reator:app", host="127.0.0.1",
-                port=REACTOR_PORT, log_level="info", reload=True)
+                port=REACTOR_PORT, log_level="critical", reload=True)
