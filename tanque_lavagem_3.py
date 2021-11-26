@@ -1,13 +1,11 @@
 """tanque_lavagem_3."""
 #  baseado no modelo de tanque de lavagem de @Guior (Guilherme Ormond)
-import uvicorn
-import sys
-import requests
-import db_class
+import uvicorn, sys, requests, db_class
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from threading import Timer
 from time import sleep
+from datetime import datetime
 
 porta = int(sys.argv[1])
 
@@ -42,6 +40,10 @@ def inserir_volume_tanque_lavagem_3(tanque: Tanque, response: Response):
         lv3_volume = tabela.get("volume_tanque_lavagem_3")
         orquestrador.update("lv3_volume",
                             lv3_volume)
+        data = datetime.now()
+        print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.qtde_biodiesel, 3)} DE BIODIESEL')
+        orquestrador.print_table()
+        print()
         resposta = {"volume_tanque_lavagem_3":
                     lv3_volume}
     else:
@@ -95,6 +97,6 @@ if __name__ == "__main__":
     stop_thread = False
 
     uvicorn.run("tanque_lavagem_3:app", host="127.0.0.1", port=porta,
-                log_level="critical", reload=True)
+                log_level="warning", reload=True)
 
     stop_thread = True

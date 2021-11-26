@@ -1,13 +1,11 @@
 """decantador."""
 
-import uvicorn
-import sys
-import requests
-import db_class
+import uvicorn, sys, requests, db_class
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from threading import Timer
 from time import sleep
+from datetime import datetime
 
 port = int(sys.argv[1])
 
@@ -45,6 +43,12 @@ def inserir_volume_decantador(tanque: Tanque, response: Response):
         tabela.update("volume_decantador", volume_atual + tanque.qtde_biodiesel)
         orquestrador.update("dc_volume", volume_atual + tanque.qtde_biodiesel)
         resposta = {"volume_decantador": volume_atual + tanque.qtde_biodiesel}
+
+        data = datetime.now()
+        print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.qtde_biodiesel, 3)} LITROS DE INSUMO')
+        orquestrador.print_table()
+        print()
+
     else:
         response.status_code = 400
         resposta = {}
@@ -93,8 +97,6 @@ def enviar_para_tanque_glicerina():
             tabela.update("volume_decantador", volume_decantador - volume_decantador)
             orquestrador.update("dc_volume", volume_decantador - volume_decantador)
 
-        # TO-DO: chamar print da tabela do orquestrador
-
         tabela.end_connection()
         orquestrador.end_connection()
 
@@ -117,6 +119,6 @@ if __name__ == "__main__":
     stop_thread = False
 
     uvicorn.run("decantador:app", host="127.0.0.1", port=port,
-                log_level="critical", reload=True)
+                log_level="warning", reload=True)
 
     stop_thread = True

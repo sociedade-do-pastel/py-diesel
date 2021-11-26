@@ -1,12 +1,9 @@
+import uvicorn, time, requests, db_class, sys
 from fastapi import FastAPI
 from pydantic import BaseModel
 from starlette.responses import Response
-import uvicorn
-import time
-import requests
 from threading import Timer
-import db_class
-import sys
+from datetime import datetime
 
 port = int(sys.argv[1])
 tabela = db_class.SimpleDB("tanque_oleo", quantidade=0.00)
@@ -67,14 +64,18 @@ def regra_negocio():
 
 
 @app.post("/tanque_oleo")
-def insere_oleo_residual(Tanque: Tanque):
+def insere_oleo_residual(tanque: Tanque):
     global tabela
     global orquestrador
     orquestrador.begin_connection()
     tabela.begin_connection()
-    tabela.increment("quantidade", Tanque.quantidade)
+    tabela.increment("quantidade", tanque.quantidade)
     oleo_novo = tabela.get("quantidade")
     orquestrador.update("to_qtde_oleo", oleo_novo)
+    data = datetime.now()
+    print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.quantidade, 3)} DE ÓLEO')
+    orquestrador.print_table()
+    print()
     tabela.end_connection()
     orquestrador.end_connection()
     return {"oleo_atual": oleo_novo}
@@ -84,4 +85,4 @@ if __name__ == "__main__":
     t = Timer(0, regra_negocio)
     t.start()
     uvicorn.run("tanque_oleo:app", host="127.0.0.1",
-                port=port, log_level="critical", reload=True)
+                port=port, log_level="warning", reload=True)

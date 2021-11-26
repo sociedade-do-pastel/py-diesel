@@ -1,11 +1,8 @@
-import uvicorn
-import sys
-import threading
-import time
-import requests
+import uvicorn, sys, threading, time, requests
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from db_class import SimpleDB, get_db
+from datetime import datetime
 
 
 class Input_naoh_etoh(BaseModel):
@@ -117,6 +114,11 @@ def inserir_oleo_reator(recv_oleo: Input_oleo, response: Response):
             volume_oleo = database.get('volume_oleo')
             orquestrador.update("rt_volume_oleo", volume_oleo)
 
+            data = datetime.now()
+            print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(recv_oleo.qtde_oleo, 3)} DE ÓLEO')
+            orquestrador.print_table()
+            print()
+
             return {'volume_oleo': volume_oleo}
     finally:
         database.end_connection()
@@ -147,6 +149,11 @@ def inserir_naoh_etoh_reator(recv_naoh_etoh: Input_naoh_etoh,
             orquestrador.update("rt_volume_naoh", volume_naoh)
             orquestrador.update("rt_volume_etoh", volume_etoh)
 
+            data = datetime.now()
+            print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(recv_naoh_etoh.qtde_etoh, 3)} DE EtOH e {round(recv_naoh_etoh.qtde_naoh, 3)} de NaOH')
+            orquestrador.print_table()
+            print()
+
             return {'volume_etoh': volume_etoh,
                     'volume_naoh': volume_naoh}
     finally:
@@ -175,4 +182,4 @@ if __name__ == '__main__':
     check_thread = threading.Thread(target=check_reactor, daemon=True)
     check_thread.start()
     uvicorn.run("reator:app", host="127.0.0.1",
-                port=REACTOR_PORT, log_level="critical", reload=True)
+                port=REACTOR_PORT, log_level="warning", reload=True)

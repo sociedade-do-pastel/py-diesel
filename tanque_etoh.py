@@ -1,22 +1,17 @@
 """tanque_etoh."""
 
-import uvicorn
-import sys
-import requests
+import uvicorn, sys, requests
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
 
 port = int(sys.argv[1])
-
 
 class Tanque(BaseModel):
     """BaseModel provê formato para json."""
 
     qtde_biodiesel: float
 
-
 app = FastAPI()
-
 
 @app.post("/tanque_etoh/", status_code=200)
 def inserir_volume_tanque_etoh(tanque: Tanque, response: Response):
@@ -27,7 +22,6 @@ def inserir_volume_tanque_etoh(tanque: Tanque, response: Response):
         return {"volume_tanque_etoh": tanque.qtde_biodiesel}
     response.status_code = 400
     return {}
-
 
 if __name__ == "__main__":
     uvicorn.run("tanque_etoh:app", host="127.0.0.1", port=port,

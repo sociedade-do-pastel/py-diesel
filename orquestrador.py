@@ -42,10 +42,11 @@ p13 = subprocess.Popen([sys.executable, arquivos[0], str(a)])		# entrega_oleo
 
 try:
     while True:
-        database.begin_connection()
-        database.print_table()
-        database.end_connection()
-        time.sleep(1)
+        pass
+        # database.begin_connection()
+        # database.print_table()
+        # database.end_connection()
+        # time.sleep(1)
 except KeyboardInterrupt:
     p12.kill()
     p4.kill()

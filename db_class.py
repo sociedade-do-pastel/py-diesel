@@ -70,12 +70,12 @@ class SimpleDB:
 
     def print_table(self):
         data = self.execute(f'''SELECT * FROM {self.table_name};''')
-        print("| {:-^30} + {:-^45} |".format("", ""))
-        print("| {:<30} | {:<45} |".format("produto", "valor"))
-        print("| {:-^30} + {:-^45} |".format("", ""))
+        print("| {:-^30} + {:-^25} |".format("", ""))
+        print("| {:<30} | {:<25} |".format("produto", "valor"))
+        print("| {:-^30} + {:-^25} |".format("", ""))
         for lines in data:
-            print("| {:<30} | {:<45} |".format(lines[0], lines[1]))
-        print("| {:-^30} + {:-^45} |".format("", ""))
+            print("| {:<30} | {:<25.3f} |".format(lines[0], lines[1]))
+        print("| {:-^30} + {:-^25} |".format("", ""))
 
     def begin_connection(self):
         key = self.get_cur_thread()

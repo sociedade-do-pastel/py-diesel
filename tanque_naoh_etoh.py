@@ -1,11 +1,9 @@
-import uvicorn
-import sys
-import requests
-import time
+import uvicorn, sys, requests, time
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from threading import Timer
 from db_class import SimpleDB, get_db
+from datetime import datetime
 
 
 port = int(sys.argv[1])
@@ -34,6 +32,11 @@ def adiciona_volumes():
     tabela.end_connection()
     orquestrador.update("tne_qtde_naoh", naoh)
     orquestrador.update("tne_qtde_etoh", etoh)
+
+    data = datetime.now()
+    print(f'tanque_naoh_etoh [{data.hour}:{data.minute}:{data.second}]: RECEBI {0.125} DE EtOH E {0.25} DE NaOH')
+    orquestrador.print_table()
+    print()
 
     # end connection
     orquestrador.end_connection()
@@ -112,6 +115,10 @@ def inserir_volume_tanque_naoh_etoh(tanque: Tanque, response: Response):
         # end connection
         tabela.end_connection()
         orquestrador.update("tne_qtde_etoh", volume_etoh)
+        data = datetime.now()
+        print(f'tanque_naoh_etoh [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.qtde_etoh, 3)} DE EtOH')
+        orquestrador.print_table()
+        print()
         # end connection
         orquestrador.end_connection()
         # end connection
@@ -126,4 +133,4 @@ if __name__ == '__main__':
     t1 = Timer(1, envia_volumes)
     t1.start()
     uvicorn.run("tanque_naoh_etoh:app", host="127.0.0.1",
-                port=port, log_level="critical", reload=True)
+                port=port, log_level="warning", reload=True)

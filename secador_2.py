@@ -1,11 +1,8 @@
+import uvicorn, requests, sys, time, db_class
 from fastapi import FastAPI
 from pydantic import BaseModel
-import uvicorn
-import requests
-import sys
-import time
-import db_class
 from threading import Timer
+from datetime import datetime
 
 port = int(sys.argv[1])
 
@@ -39,6 +36,7 @@ def regra_negocio(**kwargs):
 @app.post("/secador_2")
 def entrada_volume(volume: Secador):
     global orquestrador
+    volume_og = volume
     volume = volume.quantidade * 0.975
     tempo = 5*volume
     t = Timer(round(tempo, 2), regra_negocio, kwargs={"volume": volume})
@@ -46,10 +44,14 @@ def entrada_volume(volume: Secador):
     orquestrador.begin_connection()
     volume_atual = orquestrador.get("sc2_volume")
     orquestrador.update("sc2_volume", volume + volume_atual)
+    data = datetime.now()
+    print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(volume_og.quantidade, 3)} DE BIODIESEL')
+    orquestrador.print_table()
+    print()
     orquestrador.end_connection()
     return {"Volume adicionado": volume+volume_atual}
 
 
 if __name__ == "__main__":
     uvicorn.run("secador_2:app", host="127.0.0.1",
-                port=port, log_level="critical", reload=True)
+                port=port, log_level="warning", reload=True)
