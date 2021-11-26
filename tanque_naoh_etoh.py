@@ -1,7 +1,10 @@
-import uvicorn, sys, requests, time
+import uvicorn
+import sys
+import requests
+import time
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
-from threading import Timer
+from threading import Thread
 from db_class import SimpleDB, get_db
 from datetime import datetime
 
@@ -19,80 +22,79 @@ orquestrador.end_connection()
 
 def adiciona_volumes():
     global tabela, orquestrador
-    # begin connection
-    tabela.begin_connection()
-    orquestrador.begin_connection()
-    # begin connection
 
-    tabela.increment("volume_naoh", 0.25)
-    tabela.increment("volume_etoh", 0.125)
-    etoh = tabela.get("volume_etoh")
-    naoh = tabela.get("volume_naoh")
-    # table's end_connection
-    tabela.end_connection()
-    orquestrador.update("tne_qtde_naoh", naoh)
-    orquestrador.update("tne_qtde_etoh", etoh)
+    while True:
+        time.sleep(1)
+        # begin connection
+        tabela.begin_connection()
+        orquestrador.begin_connection()
+        # begin connection
 
-    data = datetime.now()
-    print(f'tanque_naoh_etoh [{data.hour}:{data.minute}:{data.second}]: RECEBI {0.125} DE EtOH E {0.25} DE NaOH')
-    orquestrador.print_table()
-    print()
+        tabela.increment("volume_naoh", 0.25)
+        tabela.increment("volume_etoh", 0.125)
+        etoh = tabela.get("volume_etoh")
+        naoh = tabela.get("volume_naoh")
+        # table's end_connection
+        tabela.end_connection()
+        orquestrador.update("tne_qtde_naoh", naoh)
+        orquestrador.update("tne_qtde_etoh", etoh)
 
-    # end connection
-    orquestrador.end_connection()
-    t = Timer(1, adiciona_volumes)
-    t.start()
+        data = datetime.now()
+        print(
+            f'tanque_naoh_etoh [{data.hour}:{data.minute}:{data.second}]: RECEBI {0.125} DE EtOH E {0.25} DE NaOH')
+        orquestrador.print_table()
+        print()
+
+        # end connection
+        orquestrador.end_connection()
 
 
 def envia_volumes():
     global tabela, orquestrador
 
-    tabela.begin_connection()
-    volume_etoh = tabela.get("volume_etoh")
-    volume_naoh = tabela.get("volume_naoh")
-    tabela.end_connection()
+    while True:
+        time.sleep(1)
+        tabela.begin_connection()
+        volume_etoh = tabela.get("volume_etoh")
+        volume_naoh = tabela.get("volume_naoh")
+        tabela.end_connection()
 
-    if volume_etoh > 0 or volume_naoh > 0:
-        enviar_naoh, enviar_etoh = volume_naoh, volume_etoh
-        if volume_naoh > 1:
-            enviar_naoh = 1
-        if volume_etoh > 1:
-            enviar_etoh = 1
+        if volume_etoh > 0 or volume_naoh > 0:
+            enviar_naoh, enviar_etoh = volume_naoh, volume_etoh
+            if volume_naoh > 1:
+                enviar_naoh = 1
+            if volume_etoh > 1:
+                enviar_etoh = 1
 
-        response = requests.Response()
-        try:
-            response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={
-                "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh})
-        except Exception:
-            pass
-
-        while response.status_code != 200:
+            response = requests.Response()
             try:
-                time.sleep(1)
                 response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={
                     "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh})
             except Exception:
-                continue
+                pass
 
-        # begin connection
-        orquestrador.begin_connection()
-        tabela.begin_connection()
-        # begin connection
-        tabela.increment("volume_naoh", -enviar_naoh)
-        tabela.increment("volume_etoh", -enviar_etoh)
-        naoh = tabela.get("volume_naoh")
-        etoh = tabela.get("volume_etoh")
-        # end connection
-        tabela.end_connection()
+            while response.status_code != 200:
+                try:
+                    time.sleep(1)
+                    response = requests.post(f'http://127.0.0.1:{port-5}/reator/naoh_etoh', json={
+                        "qtde_naoh": enviar_naoh, "qtde_etoh": enviar_etoh})
+                except Exception:
+                    continue
 
-        orquestrador.update("tne_qtde_naoh", naoh)
-        orquestrador.update("tne_qtde_etoh", etoh)
+            # begin connection
+            orquestrador.begin_connection()
+            tabela.begin_connection()
+            # begin connection
+            tabela.increment("volume_naoh", -enviar_naoh)
+            tabela.increment("volume_etoh", -enviar_etoh)
+            naoh = tabela.get("volume_naoh")
+            etoh = tabela.get("volume_etoh")
+            # end connection
+            tabela.end_connection()
 
-        orquestrador.end_connection()
-        # end connection
-
-    t = Timer(1, envia_volumes)
-    t.start()
+            orquestrador.update("tne_qtde_naoh", naoh)
+            orquestrador.update("tne_qtde_etoh", etoh)
+            orquestrador.end_connection()
 
 
 class Tanque(BaseModel):
@@ -116,7 +118,8 @@ def inserir_volume_tanque_naoh_etoh(tanque: Tanque, response: Response):
         tabela.end_connection()
         orquestrador.update("tne_qtde_etoh", volume_etoh)
         data = datetime.now()
-        print(f'tanque_naoh_etoh [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.qtde_etoh, 3)} DE EtOH')
+        print(
+            f'tanque_naoh_etoh [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.qtde_etoh, 3)} DE EtOH')
         orquestrador.print_table()
         print()
         # end connection
@@ -128,9 +131,9 @@ def inserir_volume_tanque_naoh_etoh(tanque: Tanque, response: Response):
 
 
 if __name__ == '__main__':
-    t = Timer(1, adiciona_volumes)
+    t = Thread(target=adiciona_volumes, daemon=True)
     t.start()
-    t1 = Timer(1, envia_volumes)
+    t1 = Thread(target=envia_volumes, daemon=True)
     t1.start()
     uvicorn.run("tanque_naoh_etoh:app", host="127.0.0.1",
                 port=port, log_level="warning", reload=True)

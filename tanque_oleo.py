@@ -1,8 +1,12 @@
-import uvicorn, time, requests, db_class, sys
+import uvicorn
+import time
+import requests
+import db_class
+import sys
 from fastapi import FastAPI
 from pydantic import BaseModel
 from starlette.responses import Response
-from threading import Timer
+from threading import Thread
 from datetime import datetime
 
 port = int(sys.argv[1])
@@ -23,44 +27,44 @@ class Tanque(BaseModel):
 def regra_negocio():
     global tabela
     global orquestrador
-    disponivel = 0
-    tabela.begin_connection()
-    orquestrador.begin_connection()
-    quantidade = tabela.get("quantidade")
-    if quantidade <= 0.0:
-        tem_oleo = 0
-    elif quantidade >= 0.5:
-        tem_oleo = 1
-        disponivel = 0.5
-        quantidade = quantidade - 0.5
-    elif quantidade < 0.5:
-        tem_oleo = 1
-        disponivel = quantidade
-        quantidade = quantidade - quantidade
-    if tem_oleo == 1:
-        tabela.update("quantidade", quantidade)
-        orquestrador.update("to_qtde_oleo", quantidade)
-        payload = {"qtde_oleo": disponivel}
-        response = requests.Response()
-        try:
-            response = requests.post(
-                f"http://127.0.0.1:{port+1}/reator/oleo", json=payload)
-        except Exception:
-            pass
 
-        while response.status_code != 200:
+    while True:
+        disponivel = 0
+        tabela.begin_connection()
+        orquestrador.begin_connection()
+        quantidade = tabela.get("quantidade")
+        if quantidade <= 0.0:
+            tem_oleo = 0
+        elif quantidade >= 0.5:
+            tem_oleo = 1
+            disponivel = 0.5
+            quantidade = quantidade - 0.5
+        elif quantidade < 0.5:
+            tem_oleo = 1
+            disponivel = quantidade
+            quantidade = quantidade - quantidade
+        if tem_oleo == 1:
+            tabela.update("quantidade", quantidade)
+            orquestrador.update("to_qtde_oleo", quantidade)
+            payload = {"qtde_oleo": disponivel}
+            response = requests.Response()
             try:
-                time.sleep(1)
                 response = requests.post(
-                    f'http://127.0.0.1:{port+1}/reator/oleo', json=payload)
+                    f"http://127.0.0.1:{port+1}/reator/oleo", json=payload)
             except Exception:
                 pass
 
-    orquestrador.end_connection()
-    tabela.end_connection()
-    time.sleep(1)
-    t = Timer(0, regra_negocio)
-    t.start()
+            while response.status_code != 200:
+                try:
+                    time.sleep(1)
+                    response = requests.post(
+                        f'http://127.0.0.1:{port+1}/reator/oleo', json=payload)
+                except Exception:
+                    pass
+
+        orquestrador.end_connection()
+        tabela.end_connection()
+        time.sleep(1)
 
 
 @app.post("/tanque_oleo")
@@ -73,7 +77,8 @@ def insere_oleo_residual(tanque: Tanque):
     oleo_novo = tabela.get("quantidade")
     orquestrador.update("to_qtde_oleo", oleo_novo)
     data = datetime.now()
-    print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.quantidade, 3)} DE ÓLEO')
+    print(
+        f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(tanque.quantidade, 3)} DE ÓLEO')
     orquestrador.print_table()
     print()
     tabela.end_connection()
@@ -82,7 +87,7 @@ def insere_oleo_residual(tanque: Tanque):
 
 
 if __name__ == "__main__":
-    t = Timer(0, regra_negocio)
+    t = Thread(target=regra_negocio, daemon=True)
     t.start()
     uvicorn.run("tanque_oleo:app", host="127.0.0.1",
                 port=port, log_level="warning", reload=True)
