@@ -1,4 +1,8 @@
-import uvicorn, sys, threading, time, requests
+import uvicorn
+import sys
+import threading
+import time
+import requests
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from db_class import SimpleDB, get_db
@@ -69,6 +73,7 @@ def check_reactor():
             temp_vol_naoh -= MIN_NAOH
             temp_vol_oleo -= MIN_OLEO
             temp_vol_insumo += PROD_INSUMO
+            database.update("volume_insumo", temp_vol_insumo)
 
             if (temp_vol_insumo >= LIM_INSUMO):
                 valor_enviar = LIM_INSUMO
@@ -77,17 +82,21 @@ def check_reactor():
                 valor_enviar = temp_vol_insumo
                 temp_vol_insumo -= temp_vol_insumo
 
-            if enviar_decantador(valor_enviar):
-                database.update("volume_etoh", temp_vol_etoh)
-                database.update("volume_naoh", temp_vol_naoh)
-                database.update("volume_oleo", temp_vol_oleo)
-                database.update("volume_insumo", temp_vol_insumo)
-                # orquestrador
-                orquestrador.update("rt_volume_etoh", temp_vol_etoh)
-                orquestrador.update("rt_volume_naoh", temp_vol_naoh)
-                orquestrador.update("rt_volume_oleo", temp_vol_oleo)
-            ciclos += 1
+            database.update("volume_etoh", temp_vol_etoh)
+            database.update("volume_naoh", temp_vol_naoh)
+            database.update("volume_oleo", temp_vol_oleo)
 
+            orquestrador.update("rt_volume_etoh", temp_vol_etoh)
+            orquestrador.update("rt_volume_naoh", temp_vol_naoh)
+            orquestrador.update("rt_volume_oleo", temp_vol_oleo)
+
+            # try to send it
+            if enviar_decantador(valor_enviar):
+                database.update("volume_insumo", temp_vol_insumo)
+            # completes a cycle even if it couldn't send the mystery liquid
+            # thingy since we've already turned our mixture into said liquid
+            # thingy
+            ciclos += 1
             orquestrador.update("rt_ciclos", ciclos)
             orquestrador.end_connection()
             database.end_connection()
@@ -115,7 +124,8 @@ def inserir_oleo_reator(recv_oleo: Input_oleo, response: Response):
             orquestrador.update("rt_volume_oleo", volume_oleo)
 
             data = datetime.now()
-            print(f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(recv_oleo.qtde_oleo, 3)} DE ÓLEO')
+            print(
+                f'{__name__} [{data.hour}:{data.minute}:{data.second}]: RECEBI {round(recv_oleo.qtde_oleo, 3)} DE ÓLEO')
             orquestrador.print_table()
             print()
 
