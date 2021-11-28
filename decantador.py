@@ -92,15 +92,15 @@ def enviar_para_tanque_glicerina():
             result = 3
             tabela.update("volume_decantador", volume_decantador - 3)
             orquestrador.update("dc_volume", volume_decantador - 3)
+            stop_time = 5
         else:
             result = volume_decantador
             tabela.update("volume_decantador", volume_decantador - volume_decantador)
             orquestrador.update("dc_volume", volume_decantador - volume_decantador)
+            stop_time = (result*5)/3
 
         tabela.end_connection()
         orquestrador.end_connection()
-
-        stop_time = 0 if result == 0 else 5
 
         if result > 0:
             requests.post(f"http://127.0.0.1:{port+1}/tanque_glicerina",
